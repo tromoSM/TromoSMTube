@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+    <header >
+       <div><img class="Tube-icon" src="TromoSM_Tube_logo-light.png"></div>
+        <div class="flex-light"><input class="search-tube" type="text" id="search"  autocomplete="off"><button class="button-tube"><img class="ui-search-search" src="tromoSMTube-UI-search white.png"></button></div>
+    </header><br>
+            <div class="flex-light" id="trnas-fif">  <div class="Suggestions inactive" id="suggestions"></div></div>
+<style>
+    .ui-search-search{
+        width: 30px;
+    }
+    .button-tube{
+   padding: 3px 1px;
+    background-color: #3d3d3dde;
+    min-width: 4vw;
+    max-width: fit-content;
+     outline: none;
+     font-family: myfont;
+     font-size: medium;
+     border-left: none;
+    border: 1px  solid #303030;
+     color: aliceblue;
+     transform: translateX(-20px);
+     border-radius:  0px  500px  500px 0px ;
+    }
+ .search-tube{
+    padding: 10px 17px;
+    background-color: #121212de;
+    border: 1px solid #303030;
+    min-width: 40vw;
+    max-width: 100vw;
+     outline: none;
+     font-family: roboto;
+     font-size: medium;
+     color: aliceblue;
+     transform: translateX(-20px);border-radius: 500px  0px  0px  500px;
+ }
+.flex-light {
+  flex: 1;
+   display: flex;        
+  justify-content: center;
+     align-items: center;  
+}
+
+
+.suggestion{
+    border-radius: 50px;
+    transition: 0ms;
+    cursor: pointer;
+    padding: 5px;
+}
+.suggestion:hover{
+    background-color: rgba(240, 248, 255, 0.205);
+}.Suggestions {
+    position: fixed !important;
+    top: 50px;   
+    left: 410px;  
+    border: 1px solid #303030;
+    font-family: Roboto;
+    font-size: medium;
+    color: aliceblue;
+    z-index: 9999999999;
+    min-width: 40vw;
+    max-width: 100vw;
+    overflow-y: auto;
+    max-height: 45vh;
+    padding: 10px 20px;
+    border-radius: 15px;
+    background: rgba(0, 0, 0, 0.685);
+    backdrop-filter: blur(15px);
+    transition: height 0.3s ease;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.Suggestions::-webkit-scrollbar {
+    display: none;
+}
+
+
+.Suggestions.active {
+  height: 45vh;
+  display: block;
+  visibility: visible;
+}
+
+.Suggestions.inactive {
+  height: 0;
+  display: none;
+  visibility: hidden;
+}
+
+   .Tube-icon{
+            width: 150px;
+        }
+          .rate{
+          font-size: larger;
+          font-family: Helvetica Neue;
+        }
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 999999999;
+            font-family: 'SFBrand';
+            background: rgb(255, 255, 255);
+            font-weight: bold;
+            height: fit-content;  
+            padding: 5px 5px;display: flex; align-items: center; 
+        }
+        @supports ((backdrop-filter: blur(15px)) or (-webkit-backdrop-filter: blur(15px))) {
+  header {
+    background:  #000000a6;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(15px);
+  }
+}
+        html,body{
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #0f0f0f;
+        }
+        .ttile,.yy{
+            width: 100vw;
+        }
+    </style>
+</html>
+
+
+  <script>
+   window.youtubeSuggestionCallback = function(data) {
+  const suggestions = data[1].map(s => s[0]);
+  const box = document.getElementById('suggestions');
+
+  if (suggestions.length > 0) {
+    box.classList.remove('inactive');
+    box.classList.add('active');
+    box.innerHTML = suggestions.map(text =>
+      `<div class="suggestion">${text}</div>`
+    ).join('');
+  } else {
+    box.classList.remove('active');
+    box.classList.add('inactive');
+    box.innerHTML = '';
+  }
+};
+
+window.onload = function () {
+  const input = document.getElementById('search');
+  const suggestionsBox = document.getElementById('suggestions');
+
+  input.addEventListener('input', () => {
+    const query = input.value.trim();
+    if (!query) {
+      suggestionsBox.classList.remove('active');
+      suggestionsBox.classList.add('inactive');
+      suggestionsBox.innerHTML = '';
+      return;
+    }
+
+    const oldScript = document.getElementById('jsonp');
+    if (oldScript) oldScript.remove();
+
+    const script = document.createElement('script');
+    script.id = 'jsonp';
+    script.src = `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(query)}&callback=youtubeSuggestionCallback`;
+    document.body.appendChild(script);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const query = input.value.trim();
+      if (query) {
+        window.location.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+      }
+    }
+  });
+
+  suggestionsBox.addEventListener('click', (e) => {
+    if (e.target.classList.contains('suggestion')) {
+      const selected = e.target.textContent;
+      window.location.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(selected)}`;
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!suggestionsBox.contains(e.target) && e.target !== input) {
+      suggestionsBox.classList.remove('active');
+      suggestionsBox.classList.add('inactive');
+      suggestionsBox.innerHTML = '';
+    }
+  });
+};
+
+    </script>
+    <script>
+    const button = document.getElementById('button-enter-search');
+
+button.addEventListener('click', () => {
+  const query = input.value.trim();
+  if (query) {
+    window.location.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  }
+});
+</script>
