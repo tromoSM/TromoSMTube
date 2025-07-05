@@ -1,0 +1,915 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+    <header >
+       <div><img class="Tube-icon" src="TromoSM_Tube_logo-light.png"></div>
+        <div class="flex-light"><input class="search-tube" type="text" id="search"  autocomplete="off"><button class="button-tube"><img class="ui-search-search" src="tromoSMTube-UI-search white.png"></button></div>
+    </header><br>
+            <div class="flex-light" id="trnas-fif">  <div class="Suggestions inactive" id="suggestions"></div></div>
+<div class="flex-center-tube-bann">
+            <img src="TromoSM_tube-banner-all.png" class="tromoSMTube-banner-hero-light"></div>
+
+<div class="flex-center-tube-bann">
+<img src="tromoSMTube-profile.png" class="Profile-botP-medium">            <h2 class="main-name-as">Definetly tromoSM</h2></div>
+  <div class="flex-n-wrpp">
+    <div class="sub-n-padd">
+    Subscribers: <span id="subscriber-count" class="stat">Dawg its loading...</span>
+  </div>
+  <div class="video-n-padd">
+    Videos: <span id="video-count" class="stat">Loading...you might wanna upgrade yo wifi</span>
+  </div>
+  <a href="https://www.viewstats.com/@tromoSM7/about"><button class="button-stats"><img src="https://cdn.brandfetch.io/idEdlNZoj3/w/820/h/820/theme/dark/logo.png?c=1dxbfHSJFAPEGdCLU4o5B" class="img-stats"><span class="hiddenst">viewstats</span></button></a>
+<a href="#contactus-link-last-title"><button class="contact-butto">Contact Us</button></a>
+<div class="flex-os-star-lil" id="flex-btn-star"><button id="star-btn" class="star-os-sub" style=" cursor:pointer; background:none; border:none; padding:0; display:flex; align-items:center;"><svg id="star-svg" xmlns="http://www.w3.org/2000/svg"width="24" height="24"viewBox="0 0 24 24"fill="none" stroke="black"stroke-width="1" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+  </svg> 
+</button><span id="star-count" class="selected-noone">Loading...yeah you need to upgrade yo wifi</span>
+</div>
+</div>
+<h3 class="logas-name-title">Description</h3>
+<div class="flex-center-des">
+<p id="description">Loading da description...</p></div>
+<h3 class="logas-name-title">Latest videos</h3><div id="videos">its loading...This might take some than other fetches</div>
+<h3 class="logas-name-title" id="contactus-link-last-title">Contact Us</h3>
+<p class="contact"><span class="str">Reports & Suggestions </span> <a  target="_blank" rel="noopener noreferr"   style="text-decoration: underline;" href="mailto:tromosm.report@gmail.com?subject\=tromoSMTube">tromosm.report@gmail.com </a></p>
+<p class="contact"><span class="str">Reports & Suggestions </span> <a  target="_blank" rel="noopener noreferr"   style="text-decoration: underline;" href="mailto:tromosm.copyright.defyt@gmail.com?subject\=tromoSMTube">tromosm.copyright.defyt@gmail.com </a></p>
+<a href="tromoSMTube-@tromoSM7-light.html"><button class="toggle-btt"><img src="tromoSMTube-UI-Toggle-app.png" class="toggle-app"><p class="hide-da-app">Light mode</p></button></a>
+<script>
+const apiKey1 = 'AIzaSyAey27t9J2T4NAVPTtpd1CYiiT1_QEaRas';
+const channelId1 = 'UCu1JZOxRMe_N9gwTO4sV3Lw';
+
+function escapeHTML(str) {
+  return str.replace(/[&<>"']/g, tag => ({
+    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
+  }[tag] || tag)).replace(/(#\w+)/g, '<span class="hashtag">$1</span>');
+}
+
+async function getChannelData(id) {
+  const res = await fetch(`https://www.googleapis.com/youtube/v3/channels?part=contentDetails,snippet&id=${id}&key=${apiKey1}`);
+  const data = await res.json();
+  return data.items[0];
+}
+async function getVideosFromUploads(playlistId, maxResults = 30) {
+  const res = await fetch(`https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&playlistId=${playlistId}&maxResults=${maxResults}&key=${apiKey1}`);
+  const data = await res.json();
+  return data.items || [];
+}
+async function getVideoStats(videoIds) {
+  const ids = videoIds.join(',');
+  const res = await fetch(`https://www.googleapis.com/youtube/v3/videos?part=statistics&id=${ids}&key=${apiKey1}`);
+  const data = await res.json();
+  const stats = {};
+  data.items.forEach(item => {
+    stats[item.id] = item.statistics;
+  });
+  return stats;
+}
+
+function createVideoCard(snippet, videoId, channelPic, channelName) {
+  const thumbnail = snippet.thumbnails?.maxres?.url || snippet.thumbnails?.high?.url || snippet.thumbnails.default.url;
+  const safeTitle = escapeHTML(snippet.title);
+
+  const card = document.createElement('a');
+  card.className = 'video-card';
+  card.href = `https://www.youtube.com/watch?v=${videoId}`;
+  card.target = '_blank';
+  card.rel = 'noopener noreferrer';
+  card.innerHTML = `
+    <div class="thumbnail-wrapper">
+      <img class="thumbnail" src="${thumbnail}" alt="${snippet.title}" />
+    </div>
+    <div class="video-info">
+      <h3 class="video-title">${safeTitle}</h3>
+      <div class="channel-info">
+        <img src="${channelPic}" alt="${channelName} profile picture" />
+        <span class="channel-name">${channelName}</span>
+      </div>
+    </div>`;
+  return card;
+}
+async function loadVideos() {
+  const container = document.getElementById('videos');
+  container.innerHTML = 'Loading videos...';
+
+  try {
+    const channelData = await getChannelData(channelId1);
+    const uploadsPlaylistId = channelData.contentDetails.relatedPlaylists.uploads;
+    const channelPic = channelData.snippet.thumbnails.default.url;
+    const channelName = channelData.snippet.title;
+
+    const videos = await getVideosFromUploads(uploadsPlaylistId, 12);
+    const videoInfoList = videos.map(v => ({
+      id: v.snippet.resourceId.videoId,
+      snippet: v.snippet
+    }));
+
+    const stats = await getVideoStats(videoInfoList.map(v => v.id));
+    videoInfoList.forEach(v => v.views = parseInt(stats[v.id]?.viewCount || 0));
+
+    container.innerHTML = '';
+    videoInfoList.forEach(v =>
+      container.appendChild(createVideoCard(v.snippet, v.id, channelPic, channelName))
+    );
+
+  } catch (e) {
+    container.innerHTML = 'Failed to load videos - get this message to tromoSM error code: ' + e.message;
+    console.error(e);
+  }
+}
+
+loadVideos();
+</script>
+<style>
+
+  @font-face {
+  font-family: 'TromoYTHeadingTest';
+  src: url('https://raw.githack.com/tromoSM/TromoSMTube/main/YouTubeSansSemibold.otf') format('truetype');
+  font-weight: 100;
+  font-style: normal;
+}
+.hide-da-app{
+  display: none;
+  transition: 0.3s;
+  color: white;
+  cursor: pointer;
+  font-family: SF Pro;
+  font-size: medium;
+}
+.toggle-btt:hover .hide-da-app{
+  display: block;
+}
+.toggle-btt:hover .toggle-app{
+  transition: 0.2s;
+  filter: brightness(1);
+  transform: rotate(180deg);
+}
+.toggle-btt:hover {
+  padding-right: 10px;
+  transition: 0.2s;
+}
+.toggle-btt{
+  border: none;
+  border-radius: 50px;
+  cursor: pointer;
+  display: flex;
+  outline: none;
+  transition: 0.3s;
+  padding: 0;
+  background-color: #242323;
+}
+.toggle-app{
+  cursor: pointer;
+  width: 50px;
+  transition: 0.3s;
+  filter: brightness(0);
+}
+.str::after{
+  content: ':';
+}
+.str{
+  font-family: SF Pro;
+  font-weight: 600;
+}
+.contact{
+  font-family: SF Pro;
+  font-weight: 400;
+}
+a:link,a:visited,a,a:hover{
+  text-decoration: underline 1px solid white;
+  color: white;
+}
+.flex-center-des{
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+#description{
+ width: 90vw;
+ padding: 10px 15px;
+ margin: 0;
+ border-radius: 10px;
+ color: white;
+ background-color: #303030;
+}
+
+.flex-n-wrpp{
+  display: flex;
+  gap: 5px;
+}
+.logas-name-title{
+  font-family: SF Pro !important;
+  color: white;
+  font-size: 30px !important;
+  width: fit-content;
+  padding-right: 15px;
+  border-top: 5px transparent solid;
+  border-bottom: 5px solid rgba(255, 255, 255, 0);
+  padding-left: 10px;
+  border-left: 5px solid rgb(255, 255, 255);
+  transition: 0.1s;
+}
+.logas-name-title:hover{
+  border-left: 9px solid rgb(255, 255, 255);
+
+}
+
+.img-stats{
+width: 20px;
+}
+*::selection{
+background-color: rgba(0, 0, 0, 0.322);
+}
+img::selection{
+  background-color: transparent;
+}
+.tromoSMTube-banner-hero-light{
+  pointer-events: none;
+}
+.contact-butto{
+  border: none;
+  background-color: white;
+  outline: none;
+  cursor: pointer;
+  font-size: medium;
+  padding: 2px 10px;
+transition: 0.3s;
+  border-radius: 60px;
+  font-family: SF Pro;
+}
+.contact-butto:active{
+  scale: 0.8;
+}
+.button-stats{
+width: fit-content;
+align-items: center !important;
+border: none;
+height: 25px;
+display: flex;
+font-family: SF Pro;
+cursor: pointer;
+outline: none;
+color: aliceblue;
+text-decoration: none;
+border-radius: 80px;
+transition: 0.3s;
+padding: 0px 5px;
+background-color: red;
+}
+.button-stats:hover{
+padding: 0px 15px;
+
+}
+.button-stats:hover .hiddenst{
+transition: 0.3s;
+  display: block;
+}
+.hiddenst{
+  transition: 0.3s;
+  font-family: SF Pro;
+  color: aliceblue;
+text-decoration: none;
+transition: 0.3s;
+  padding-right: 5px;
+  display: none;
+}
+a,a:link,a:visited{
+  text-decoration: none;
+}
+.sub-n-padd span,.video-n-padd span{
+  background-color: rgb(32, 32, 32);
+  font-family: SF Pro;
+  color: aliceblue;
+  border-radius: 50px;
+  padding: 2px 10px;
+}
+.sub-n-padd,.video-n-padd{
+    font-family: SF Pro;
+  color: aliceblue;
+  border-radius: 50px;
+  background-color: #333;
+  border: 1px solid rgba(240, 248, 255, 0.247);
+  padding: 2px 0px 2px 10px;
+}
+.main-name-as{
+  font-size: 40px;
+  color: aliceblue;
+  margin: 0;
+  padding: 0;
+
+   font-family: "TromoYTHeadingTest";
+}
+.Profile-botP-medium{
+  width: 130px;
+  margin-bottom: 15px;
+  margin-right: 15px;
+  transition: 0.3s;
+  border-radius: 500px;
+  border: 2px transparent solid;
+  /*
+  animation fake rotate gradient 
+  animation-name: animationrot;
+  animation-duration: 1s;
+  animation-iteration-count: infinite;*/
+}
+.Profile-botP-medium:hover{
+  width: 130px;
+  border: 2px solid #fb0032;
+}
+.Profile-botP-medium:active{
+  filter: brightness(0.5);
+  transition: 0.2s filter;
+  border:  2px dashed white;
+}
+@keyframes animationrot{
+  0%{
+  border-bottom: 2px solid #fb0032;
+            border-right: 2px solid  red;
+            border-left: 2px solid #fb0032;
+            border-top: 2px solid red;
+  }
+  50%{
+  border-bottom: 2px solid red;
+            border-right: 2px solid red;
+            border-left: 2px solid #fb0032;
+            border-top: 2px solid #fb0032;
+  }
+  100%{
+  border-bottom: 2px solid #fb0032;
+            border-right: 2px solid  red;
+            border-left: 2px solid #fb0032;
+            border-top: 2px solid red;
+  }
+}
+  .flex-center-tube-bann{
+    display: flex;
+    justify-content: left;
+    align-items: center;
+  }
+  .tromoSMTube-banner-hero-light{
+    width: 100vw;
+    margin: 0;
+    transform: translateY(-30px);
+    border-radius: 0px;
+  }
+    .ui-search-search{
+        width: 30px;
+    }
+    .button-tube{
+   padding: 3px 1px;
+    background-color: #3d3d3dde;
+    min-width: 4vw;
+    max-width: fit-content;
+     outline: none;
+     font-family: myfont;
+     font-size: medium;
+     border-left: none;
+    border: 1px  solid #303030;
+     color: aliceblue;
+     transform: translateX(-20px);
+     border-radius:  0px  500px  500px 0px ;
+    }
+ .search-tube{
+    padding: 10px 17px;
+    background-color: #121212de;
+    border: 1px solid #303030;
+    min-width: 40vw;
+    max-width: 100vw;
+     outline: none;
+     font-family: roboto;
+     font-size: medium;
+     color: aliceblue;
+     transform: translateX(-20px);border-radius: 500px  0px  0px  500px;
+ }
+.flex-light {
+  flex: 1;
+   display: flex;        
+  justify-content: center;
+     align-items: center;  
+}
+
+
+.suggestion{
+    border-radius: 50px;
+    transition: 0ms;
+    cursor: pointer;
+    padding: 5px;
+}
+.suggestion:hover{
+    background-color: rgba(240, 248, 255, 0.205);
+}.Suggestions {
+    position: fixed !important;
+    top: 50px;   
+    left: 410px;  
+    border: 1px solid #303030;
+    font-family: Roboto;
+    font-size: medium;
+    color: aliceblue;
+    z-index: 9999999999;
+    min-width: 40vw;
+    max-width: 100vw;
+    overflow-y: auto;
+    max-height: 45vh;
+    padding: 10px 20px;
+        background: rgb(41, 41, 41);
+    border-radius: 15px;
+    backdrop-filter: blur(15px);
+    -webkit-backdrop-filter: blur(15px);
+    transition: height 0.3s ease;
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+}
+
+.Suggestions::-webkit-scrollbar {
+    display: none;
+}
+
+
+.Suggestions.active {
+  height: 45vh;
+  display: block;
+  visibility: visible;
+}
+
+.Suggestions.inactive {
+  height: 0;
+  display: none;
+  visibility: hidden;
+}
+
+   .Tube-icon{
+            width: 150px;
+        }
+          .rate{
+          font-size: larger;
+          font-family: Helvetica Neue;
+        }
+        header {
+            position: sticky;
+            top: 0;
+            z-index: 999999999;
+            font-family: 'SFBrand';
+            background: rgb(19, 19, 19);
+            font-weight: bold;
+            height: fit-content;  
+            padding: 5px 5px;display: flex; align-items: center; 
+        }
+        @supports ((backdrop-filter: blur(15px)) or (-webkit-backdrop-filter: blur(15px))) {
+  header {
+    background:  #000000a6;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(15px);
+  }
+  .Suggestions{
+
+    background: rgba(0, 0, 0, 0.685);
+  }
+}
+        html,body{
+            width: 100%;
+            margin: 0;
+            padding: 0;
+            background-color: #0f0f0f;
+        }
+        .ttile,.yy{
+            width: 100vw;
+        }
+    </style>
+</html>
+
+
+  <script>
+   window.youtubeSuggestionCallback = function(data) {
+  const suggestions = data[1].map(s => s[0]);
+  const box = document.getElementById('suggestions');
+
+  if (suggestions.length > 0) {
+    box.classList.remove('inactive');
+    box.classList.add('active');
+    box.innerHTML = suggestions.map(text =>
+      `<div class="suggestion">${text}</div>`
+    ).join('');
+  } else {
+    box.classList.remove('active');
+    box.classList.add('inactive');
+    box.innerHTML = '';
+  }
+};
+
+window.onload = function () {
+  const input = document.getElementById('search');
+  const suggestionsBox = document.getElementById('suggestions');
+
+  input.addEventListener('input', () => {
+    const query = input.value.trim();
+    if (!query) {
+      suggestionsBox.classList.remove('active');
+      suggestionsBox.classList.add('inactive');
+      suggestionsBox.innerHTML = '';
+      return;
+    }
+
+    const oldScript = document.getElementById('jsonp');
+    if (oldScript) oldScript.remove();
+
+    const script = document.createElement('script');
+    script.id = 'jsonp';
+    script.src = `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(query)}&callback=youtubeSuggestionCallback`;
+    document.body.appendChild(script);
+  });
+
+  input.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') {
+      const query = input.value.trim();
+      if (query) {
+        window.location.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+      }
+    }
+  });
+
+  suggestionsBox.addEventListener('click', (e) => {
+    if (e.target.classList.contains('suggestion')) {
+      const selected = e.target.textContent;
+      window.location.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(selected)}`;
+    }
+  });
+
+  document.addEventListener('click', (e) => {
+    if (!suggestionsBox.contains(e.target) && e.target !== input) {
+      suggestionsBox.classList.remove('active');
+      suggestionsBox.classList.add('inactive');
+      suggestionsBox.innerHTML = '';
+    }
+  });
+};
+
+    </script>
+    <script>
+    const button = document.getElementById('button-enter-search');
+
+button.addEventListener('click', () => {
+  const query = input.value.trim();
+  if (query) {
+    window.location.href = `https://www.youtube.com/results?search_query=${encodeURIComponent(query)}`;
+  }
+});
+</script>
+
+<script>
+   const API_KEY = 'AIzaSyAey27t9J2T4NAVPTtpd1CYiiT1_QEaRas';
+    const CHANNEL_ID = 'UCu1JZOxRMe_N9gwTO4sV3Lw';  
+
+ async function fetchChannelStats() {
+      const url = `https://www.googleapis.com/youtube/v3/channels?part=statistics&id=${CHANNEL_ID}&key=${API_KEY}`;
+
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.items && data.items.length > 0) {
+          const stats = data.items[0].statistics;
+          document.getElementById('subscriber-count').textContent = Number(stats.subscriberCount).toLocaleString();
+          document.getElementById('video-count').textContent = Number(stats.videoCount).toLocaleString();
+        } else {
+          document.getElementById('subscriber-count').textContent = 'Channel not found';
+          document.getElementById('video-count').textContent = 'Channel not found';
+        }
+      } catch (error) {
+        document.getElementById('subscriber-count').textContent = 'Error loading count';
+        document.getElementById('video-count').textContent = 'Error loading count';
+        console.error('Error:', error);
+      }
+    }
+
+    fetchChannelStats();
+    setInterval(fetchChannelStats, 60000); // Update every 60 seconds
+</script>
+<style>
+    .selected-noone::selection{
+        background-color: #d1d1d100;
+        
+    }
+    svg{
+        filter: brightness(0);
+        margin: 0px 5px;
+        transition: 0.3s;
+        width: 20px !important;
+
+    }
+    .star-os-sub:hover{
+        background-color: #d1d1d1 !important; 
+        padding: 5px ;
+        border-radius: 80px;
+    }
+  
+
+     .flex-os-star-lil span{
+        margin: 0px 7px;
+     }
+    .flex-os-star-lil{
+        display: flex;
+        cursor: pointer;
+        font-family: SF Pro;
+        align-items: center;
+        background-color: aliceblue;
+        border: 1px solid #d1d1d1;
+        border-radius: 50px;
+        width: fit-content;
+        color: #000;
+    }
+    .flex-os-star-lil:active svg,.svg:active,.star-os-sub:active svg{
+        scale: 0.7;
+    }
+</style>
+
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-app.js";
+  import { getDatabase, ref, set, remove, onValue } from "https://www.gstatic.com/firebasejs/11.9.1/firebase-database.js";
+
+  const firebaseConfig = {
+    apiKey: "AIzaSyAfGmR4kGADiRG5wYCJunlHzMd1dzbAZEY",
+    authDomain: "tromosmtube-subscribers.firebaseapp.com",
+    databaseURL: "https://tromosmtube-subscribers-default-rtdb.firebaseio.com",
+    projectId: "tromosmtube-subscribers",
+    storageBucket: "tromosmtube-subscribers.firebasestorage.app",
+    messagingSenderId: "866353813299",
+    appId: "1:866353813299:web:2f9c5948f626f998ce1046",
+    measurementId: "G-44VGHMFHFE"
+  };
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+
+  const starCountEl = document.getElementById('star-count');
+  const starBtn = document.getElementById('flex-btn-star');
+  const starSvg = document.getElementById('star-svg');
+  const localKey = 'user_star_key';
+
+  let isProcessing = false; // prevent rapid clicks
+
+  // Helper: update star fill
+  function updateStarFill(hasStarred) {
+    starSvg.setAttribute('fill', hasStarred ? 'gold' : 'none');
+  }
+
+  // Load initial star state from localStorage
+  let userStarKey = localStorage.getItem(localKey);
+
+  // Listen for star count changes and update count
+  const starsRef = ref(db, 'stars');
+  onValue(starsRef, snapshot => {
+    const data = snapshot.val();
+    const count = data ? Object.keys(data).length : 0;
+    starCountEl.textContent = count;
+  });
+
+  // Before showing UI, verify if the user star actually exists in DB
+  async function checkUserStar() {
+    if (!userStarKey) {
+      updateStarFill(false);
+      return;
+    }
+    try {
+      const starRef = ref(db, 'stars/' + userStarKey);
+      const snapshot = await new Promise((resolve) =>
+        onValue(starRef, snap => resolve(snap), { onlyOnce: true })
+      );
+
+      if (snapshot.exists()) {
+        updateStarFill(true);
+      } else {
+        // Star removed from DB but still in localStorage — clear it
+        localStorage.removeItem(localKey);
+        userStarKey = null;
+        updateStarFill(false);
+      }
+    } catch {
+      updateStarFill(false);
+    }
+  }
+
+  checkUserStar();
+
+  starBtn.onclick = async () => {
+    if (isProcessing) return;
+    isProcessing = true;
+
+    if (userStarKey) {
+      // User wants to remove star — update UI instantly
+      updateStarFill(false);
+      localStorage.removeItem(localKey);
+      const oldKey = userStarKey;
+      userStarKey = null;
+
+      try {
+        await remove(ref(db, 'stars/' + oldKey));
+      } catch (e) {
+        alert('Error removing star: ' + e.message);
+        // Revert UI on failure
+        updateStarFill(true);
+        localStorage.setItem(localKey, oldKey);
+        userStarKey = oldKey;
+      } finally {
+        isProcessing = false;
+      }
+    } else {
+      // User wants to add star — update UI instantly
+      updateStarFill(true);
+      const key = 'star-' + Date.now();
+      localStorage.setItem(localKey, key);
+      userStarKey = key;
+
+      try {
+        await set(ref(db, 'stars/' + key), true);
+      } catch (e) {
+        alert('Error adding star: ' + e.message);
+        // Revert UI on failure
+        updateStarFill(false);
+        localStorage.removeItem(localKey);
+        userStarKey = null;
+      } finally {
+        isProcessing = false;
+      }
+    }
+  };
+
+  // Make sure clicking the SVG also triggers the button click (for safety)
+  starSvg.style.cursor = 'pointer';
+  starSvg.onclick = (e) => {
+    e.stopPropagation();
+    starBtn.click();
+  };
+</script>
+ <style class="the-hell-id-dawg-man-the-video-from-my-channels">
+    .hashtag {
+      display: none;
+    }
+   
+    h1 {
+      text-align: center;
+    }
+    #videos {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 0.1px;
+      max-width: 90vw;
+      margin: 10px auto;
+    }
+    .video-card {
+      background-color: rgb(17, 17, 17);
+      border-radius: 15px;
+      box-shadow: 0 0 8px rgba(0,0,0,0.1);
+      overflow: hidden;
+      border: 1px solid rgb(32, 32, 32);
+      display: flex;
+      flex-direction: column;
+      cursor: pointer;
+      width: 200px;
+      transition: 0.2s;
+      text-decoration: none;
+      margin-bottom: 20px;
+    }
+    .video-card:hover {
+      filter: brightness(0.6);
+    }
+     .video-card:active {
+      filter: brightness(0.4)  blur(5px);
+      scale: 0.9;
+    }
+    .thumbnail-wrapper {
+      width: 200px;
+      aspect-ratio: 9 / 16;
+      overflow: hidden;
+    }
+    .thumbnail {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+    .video-info {
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+      flex-grow: 1;
+    }
+    .video-title {
+      font-size: 16px;
+      font-weight: 400;
+      color: #ffffff;
+      margin: 0;
+      font-family: SF Pro;
+      text-decoration: none;
+    }
+    html,body{
+      scroll-behavior: smooth;
+    }
+  
+    .channel-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-family: SF Pro;
+      margin-top: 10px;
+      margin-top: auto;
+    }
+    .channel-info img {
+      width: 36px;
+      height: 36px;
+      border-radius: 50px;
+      object-fit: cover;
+    }
+    .channel-name {
+      font-size: 14px;
+      color: #ffffffb0;
+      text-decoration: none;
+  
+    }
+  .sec-title-h2-dawg{
+    position: normal;
+    height: fit-content;
+    align-items: start;
+    background-color: #fb0032;
+  } 
+html{
+  font-family: SF Pro;
+  color: #d1d1d1;
+}
+  </style> <script>
+    const apiKey = 'AIzaSyAey27t9J2T4NAVPTtpd1CYiiT1_QEaRas';
+    const channelId = 'UCu1JZOxRMe_N9gwTO4sV3Lw';
+
+    async function fetchChannelDescription() {
+      const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${apiKey}`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.items && data.items.length > 0) {
+          const description = data.items[0].snippet.description;
+          document.getElementById('description').textContent = description;
+        } else {
+          document.getElementById('description').textContent = 'Channel not found.';
+        }
+      } catch (error) {
+        document.getElementById('description').textContent = 'Error fetching data.';
+        console.error(error);
+      }
+    }
+
+    fetchChannelDescription();
+  </script><script>
+  (function() {
+    const apiKey = 'AIzaSyAey27t9J2T4NAVPTtpd1CYiiT1_QEaRas';
+    const channelId = 'UCu1JZOxRMe_N9gwTO4sV3Lw';
+
+    async function fetchChannelDescription() {
+      const url = `https://www.googleapis.com/youtube/v3/channels?part=snippet&id=${channelId}&key=${apiKey}`;
+      try {
+        const response = await fetch(url);
+        const data = await response.json();
+
+        if (data.items && data.items.length > 0) {
+          const description = data.items[0].snippet.description;
+          document.getElementById('description').textContent = description;
+        } else {
+          document.getElementById('description').textContent = 'Channel not found.';
+        }
+      } catch (error) {
+        document.getElementById('description').textContent = 'Error fetching data.';
+        console.error(error);
+      }
+    }
+
+    fetchChannelDescription();
+  })();
+</script>
+<script>
+    (function() {
+      let currentScroll = 0; 
+      let targetScroll = 0;  
+      const easeFactor = 1; 
+
+      window.addEventListener('wheel', (e) => {
+        e.preventDefault(); 
+
+        targetScroll += e.deltaY; 
+        const maxScroll = document.body.scrollHeight - window.innerHeight;
+        targetScroll = Math.min(Math.max(0, targetScroll), maxScroll);
+      }, { passive: false });
+
+      function smoothScroll() {
+        const diff = targetScroll - currentScroll;
+        if (Math.abs(diff) < 0.1) {
+          currentScroll = targetScroll;
+        } else {
+          currentScroll += diff * easeFactor; 
+        }
+
+        window.scrollTo(0, currentScroll);
+        requestAnimationFrame(smoothScroll);
+      }
+
+      smoothScroll();
+    })();
+  </script>
